@@ -88,6 +88,10 @@
         cursor: not-allowed;
       }
 
+      .leaflet-marker-pane .leaflet-marker.hidden {
+        display: none;
+      }
+
       #hud .help {
         margin-top: 6px;
         font-size: 12px;
@@ -103,6 +107,7 @@
         <span class="badge" id="points">Pontos: 0</span>
         <span class="badge" id="distance">Distância: —</span>
         <button class="btn" id="removeLast" disabled>Remover Último</button>
+        <button class="btn" id="togglePins">Ocultar Pins</button>
         <button class="btn" id="clear" disabled>Limpar</button>
       </div>
       <div class="help">
@@ -130,7 +135,10 @@
         distance: document.getElementById("distance"),
         clear: document.getElementById("clear"),
         removeLast: document.getElementById("removeLast"),
+        togglePins: document.getElementById("togglePins"),
       };
+
+      let pinsVisible = true;
 
       function formatKm(meters) {
         return `${(meters / 1000).toFixed(2)} km`;
@@ -140,11 +148,11 @@
         waypoints: [],
         routeWhileDragging: true,
         addWaypoints: false,
+        draggableWaypoints: true,
         showAlternatives: false,
         fitSelectedRoutes: true,
         collapsible: true,
-        show: false,
-        createMarker: () => null,
+        show: true,
         lineOptions: {
           styles: [{ color: "#000080", opacity: 0.95, weight: 6 }],
         },
@@ -195,6 +203,22 @@
           pts.pop();
           routingControl.setWaypoints(pts);
           syncUi();
+        }
+      });
+
+      ui.togglePins.addEventListener("click", () => {
+        pinsVisible = !pinsVisible;
+        const container = document.querySelector(".leaflet-marker-pane");
+        if (container) {
+          if (pinsVisible) {
+            container.style.opacity = "1";
+            container.style.pointerEvents = "auto";
+            ui.togglePins.textContent = "Ocultar Pins";
+          } else {
+            container.style.opacity = "0";
+            container.style.pointerEvents = "none";
+            ui.togglePins.textContent = "Mostrar Pins";
+          }
         }
       });
 
