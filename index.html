@@ -103,7 +103,6 @@
         <span class="badge" id="points">Pontos: 0</span>
         <span class="badge" id="distance">Distância: —</span>
         <button class="btn" id="removeLast" disabled>Remover Último</button>
-        <button class="btn" id="reverse" disabled>Reverter</button>
         <button class="btn" id="clear" disabled>Limpar</button>
       </div>
       <div class="help">
@@ -131,7 +130,6 @@
         distance: document.getElementById("distance"),
         clear: document.getElementById("clear"),
         removeLast: document.getElementById("removeLast"),
-        reverse: document.getElementById("reverse"),
       };
 
       function formatKm(meters) {
@@ -176,7 +174,6 @@
         ui.points.textContent = `Pontos: ${pts.length}`;
         ui.clear.disabled = pts.length === 0;
         ui.removeLast.disabled = pts.length === 0;
-        ui.reverse.disabled = pts.length < 2;
         if (pts.length < 2) ui.distance.textContent = "Distância: —";
       }
 
@@ -196,15 +193,6 @@
         const pts = getLatLngWaypoints();
         if (pts.length > 0) {
           pts.pop();
-          routingControl.setWaypoints(pts);
-          syncUi();
-        }
-      });
-
-      ui.reverse.addEventListener("click", () => {
-        const pts = getLatLngWaypoints();
-        if (pts.length >= 2) {
-          pts.reverse();
           routingControl.setWaypoints(pts);
           syncUi();
         }
