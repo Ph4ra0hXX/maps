@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Rota com Leaflet</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+    />
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+      #hud {
+        position: absolute;
+        z-index: 1000;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        max-width: 520px;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        padding: 10px 12px;
+        color: #fff;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        backdrop-filter: blur(6px);
+      }
+
+      #hud h1 {
+        margin: 0 0 6px;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      #hud .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        font-size: 12px;
+        opacity: 0.95;
+      }
+
+      #hud .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.06);
+        font-variant-numeric: tabular-nums;
+      }
+
+      #hud .btn {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      #hud .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      #hud .help {
+        margin-top: 6px;
+        font-size: 12px;
+        opacity: 0.9;
+        line-height: 1.25;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <h1>Definir rota manualmente</h1>
+      <div class="row">
+        <span class="badge" id="points">Pontos: 0</span>
+        <span class="badge" id="distance">Distância: —</span>
+        <button class="btn" id="clear" disabled>Limpar</button>
+      </div>
+      <div class="help">
+        Clique no mapa para adicionar pontos (largada, chegada e
+        intermediários). Depois arraste os marcadores para ajustar.
+      </div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      const map = L.map("map").setView([-3.7233, -38.520856], 13); // Fortaleza
+
+      // Tema: CARTO Dark Matter (escuro)
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        {
+          subdomains: "abcd",
+          maxZoom: 20,
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+        },
+      ).addTo(map);
+
+      const ui = {
+        points: document.getElementById("points"),
+        distance: document.getElementById("distance"),
+        clear: document.getElementById("clear"),
+      };
+
+      function formatKm(meters) {
+        return `${(meters / 1000).toFixed(2)} km`;
+      }
+
+      const routingControl = L.Routing.control({
+        waypoints: [],
+        routeWhileDragging: true,
+        addWaypoints: false,
+        showAlternatives: false,
+        fitSelectedRoutes: true,
+        collapsible: true,
+        show: false,
+        lineOptions: {
+          styles: [{ color: "#000080", opacity: 0.95, weight: 6 }],
+        },
+        router: L.Routing.osrmv1({
+          serviceUrl: "https://router.project-osrm.org/route/v1",
+        }),
+      })
+        .on("routesfound", (e) => {
+          const route = e.routes?.[0];
+          if (!route) return;
+          ui.distance.textContent = `Distância: ${formatKm(route.summary.totalDistance)}`;
+        })
+        .on("routingerror", () => {
+          ui.distance.textContent = "Distância: —";
+        })
+        .addTo(map);
+
+      function getLatLngWaypoints() {
+        return routingControl
+          .getWaypoints()
+          .map((w) => w.latLng)
+          .filter(Boolean);
+      }
+
+      function syncUi() {
+        const pts = getLatLngWaypoints();
+        ui.points.textContent = `Pontos: ${pts.length}`;
+        ui.clear.disabled = pts.length === 0;
+        if (pts.length < 2) ui.distance.textContent = "Distância: —";
+      }
+
+      map.on("click", (ev) => {
+        const pts = getLatLngWaypoints();
+        pts.push(ev.latlng);
+        routingControl.setWaypoints(pts);
+        syncUi();
+      });
+
+      ui.clear.addEventListener("click", () => {
+        routingControl.setWaypoints([]);
+        syncUi();
+      });
+
+      routingControl.on("waypointschanged", syncUi);
+      syncUi();
+    </script>
+  </body>
+</html>
